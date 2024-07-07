@@ -34,7 +34,7 @@ export class AuthService {
                 })
 
                 if(newUser){
-                    const token = this.jwt.sign({user:{newUser}})
+                    const token = this.jwt.sign({id:newUser.id})
 
                     return {statusCode:201,message:"User Signup Successfully",token:token,user:newUser}
                 }else{
@@ -58,7 +58,7 @@ export class AuthService {
                 const comaprePass = bcrypt.compareSync(credentials.password,chekUser.password)
 
                 if(comaprePass){
-                    const token = this.jwt.sign({user:{chekUser}})
+                    const token = this.jwt.sign({id:chekUser.id})
 
                     return {statusCode:201,message:"User Signin Successfully",user:chekUser,token}
                 }else{

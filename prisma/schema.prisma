@@ -14,13 +14,30 @@ datasource db {
 }
 
 enum RoleType {
-  guest 
+  guest
   moderator
 }
 
 model users {
-  id       String @id() @default(uuid())
-  username String
-  email    String
-  password String
+  id         String   @id() @default(uuid())
+  username   String
+  email      String
+  password   String
+  created_at DateTime @default(now())
+  updated_at DateTime @default(now())
+
+  Servers servers[]
+}
+
+model servers {
+  id          String   @id() @default(uuid())
+  name        String
+  userId      String
+  serverImage String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @default(now())
+  users       users?   @relation(fields: [userId], references: [id],onDelete: Cascade)
+  // usersId     String?
+
+  @@unique([userId,name])
 }

@@ -8,6 +8,9 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.setGlobalPrefix('api/v1');
 
+  app.enableCors({
+    origin: '*',
+  });
   app.useGlobalPipes(
     new ValidationPipe({
       transform: true,
@@ -18,6 +21,10 @@ async function bootstrap() {
     .setTitle('Discord Backend')
     .setDescription('The API Description for Discord Backend')
     .setVersion('1.0')
+    .addBearerAuth(
+      { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
+      'JWT-auth',
+    )
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

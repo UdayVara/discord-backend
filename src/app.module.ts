@@ -5,20 +5,29 @@ import { JwtModule } from '@nestjs/jwt';
 import { CommonModule } from './common/common/common.module';
 import { AuthModule } from './auth/auth.module';
 import { ServerModule } from './server/server.module';
+import { join } from 'path';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { ChannelsModule } from './channels/channels.module';
 
 @Module({
   imports: [
-    JwtModule.register({
-      global:true,
-      secret:process.env.JWT_SECRET,
-      signOptions:{
-        expiresIn:"24h"
-      }
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'public'),
     }),
-    CommonModule,AuthModule,  ServerModule
+    JwtModule.register({
+      global: true,
+      secret: process.env.JWT_SECRET,
+      signOptions: {
+        expiresIn: '24h',
+      },
+    }),
+    CommonModule,
+    AuthModule,
+    ServerModule,
+    ChannelsModule,
   ],
   controllers: [AppController],
-  providers: [AppService,CommonModule],
-  exports:[CommonModule]
+  providers: [AppService, CommonModule],
+  exports: [CommonModule],
 })
 export class AppModule {}

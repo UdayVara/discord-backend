@@ -18,6 +18,12 @@ enum RoleType {
   moderator
 }
 
+enum ChannelType {
+  audio
+  video
+  text
+}
+
 model users {
   id         String   @id() @default(uuid())
   username   String
@@ -26,7 +32,8 @@ model users {
   created_at DateTime @default(now())
   updated_at DateTime @default(now())
 
-  Servers servers[]
+  Servers  servers[]
+  Channels channels[]
 }
 
 model servers {
@@ -36,8 +43,25 @@ model servers {
   serverImage String?
   created_at  DateTime @default(now())
   updated_at  DateTime @default(now())
-  users       users?   @relation(fields: [userId], references: [id],onDelete: Cascade)
+  users       users    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   // usersId     String?
 
-  @@unique([userId,name])
+  channels channels[]
+
+  @@unique([userId, name])
+}
+
+model channels {
+  id         String      @id() @default(uuid())
+  name       String
+  serverId   String
+  type       ChannelType @default(text)
+  userId     String
+  users      users       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  servers    servers     @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  created_at DateTime    @default(now())
+  updated_at DateTime    @default(now())
+
+  @@unique([serverId, name])
 }

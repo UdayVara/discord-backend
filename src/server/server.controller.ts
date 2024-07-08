@@ -15,13 +15,14 @@ import { ServerService } from './server.service';
 import { CreateServerDto } from './dto/create-server.dto';
 import { updateServerDto } from './dto/update-server.dto';
 import { AuthGuard } from 'src/Guards/auth/auth.guard';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 
-@Controller('server')
+@ApiBearerAuth('JWT-auth')
 @UseGuards(AuthGuard)
 @ApiTags('Server')
+@Controller('server')
 export class ServerController {
   constructor(private readonly serverService: ServerService) {}
 
@@ -69,7 +70,7 @@ export class ServerController {
         destination(req, file, callback) {
           callback(null, 'public/server-images');
         },
-        filename(req:any, file, callback) {
+        filename(req: any, file, callback) {
           callback(null, req.user.id + file.originalname);
         },
       }),
@@ -79,9 +80,14 @@ export class ServerController {
     @Param('id') id: string,
     @Body() data: updateServerDto,
     @UploadedFile() File: Express.Multer.File,
-    @Req() req
+    @Req() req,
   ) {
-    return this.serverService.update(id, data, File.originalname || '',req.user.id);
+    return this.serverService.update(
+      id,
+      data,
+      File.originalname || '',
+      req.user.id,
+    );
   }
 
   @Delete(':id')

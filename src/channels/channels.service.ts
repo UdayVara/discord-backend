@@ -52,10 +52,26 @@ export class ChannelsService {
         },
       });
 
+      // const groupedChannels = userChannels
+      // Object.groupBy
+      const groupedChannels: any = userChannels.reduce((acc, item) => {
+        // If the type doesn't exist in the accumulator, create an array for it
+        if (!acc[item.type]) {
+          acc[item.type] = [];
+        }
+
+        // Push the current item into the array for its type
+        acc[item.type].push(item);
+
+        return acc;
+      }, {});
+
       return {
         statusCode: 201,
         message: 'Channels Fetched Successfully',
-        servers: userChannels,
+        textChannels: groupedChannels?.text || [],
+        audioChannels: groupedChannels?.audio || [],
+        videoChannels: groupedChannels?.video || [],
       };
     } catch (error) {
       throw new InternalServerErrorException();
@@ -75,7 +91,7 @@ export class ChannelsService {
         return {
           statusCode: 201,
           message: 'Channel Fetched Successfully',
-          server: getChannel,
+          channel: getChannel,
         };
       } else {
         return { statusCode: 404, message: 'Channel Does Not Exists' };
@@ -99,7 +115,7 @@ export class ChannelsService {
       //   fs.rmSync(`public/server-images/${userId + getServer?.serverImage}`);
       // }
 
-      const server = await this.prisma.channels.update({
+      const channel = await this.prisma.channels.update({
         where: {
           id: id,
         },
@@ -107,12 +123,11 @@ export class ChannelsService {
           name: updateChanneldto.name,
           userId: userId,
           type: updateChanneldto.type,
-          serverId: updateChanneldto.serverId,
           updated_at: new Date(),
         },
       });
 
-      if (server) {
+      if (channel) {
         return { statusCode: 201, message: 'Server Updated Successfully' };
       } else {
         throw new InternalServerErrorException();

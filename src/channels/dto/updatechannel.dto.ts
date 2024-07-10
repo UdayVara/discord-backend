@@ -1,6 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { ChannelType } from "@prisma/client";
-import { IsEnum, IsNotEmpty, IsString, IsUUID } from "class-validator";
+import { IsEnum, IsNotEmpty, IsString } from "class-validator";
 
 export class updateChannelDto{
 
@@ -9,10 +9,6 @@ export class updateChannelDto{
     @IsNotEmpty()
     name:string;
 
-    @ApiProperty()
-    @IsUUID()
-    @IsNotEmpty()
-    serverId:string;
 
     @ApiProperty()
     @IsNotEmpty()

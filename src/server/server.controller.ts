@@ -94,4 +94,24 @@ export class ServerController {
   remove(@Param('id') id: string, @Req() req) {
     return this.serverService.remove(id, req.user.id);
   }
+
+  @Post('join/:id')
+  joinServer(@Param('id') serverId, @Req() req) {
+    return this.serverService.joinServer(serverId, req.user.id);
+  }
+
+  @Delete('leave/:id')
+  leaveServer(@Param('id') serverId, @Req() req) {
+    return this.serverService.leaveServer(serverId, req.user.id);
+  }
+
+  @Get("role/:id")
+  getRole(@Param('id') serverId, @Req() req) {
+    return this.serverService.getRole(serverId, req.user.id);
+  }
+
+  @Get("members/:id")
+  getMembers(@Param('id') serverId, @Req() req) {
+    return this.serverService.getMembers(serverId, req.user.id);
+  }
 }

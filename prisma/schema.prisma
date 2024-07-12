@@ -13,15 +13,17 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum RoleType {
-  guest
-  moderator
-}
+
 
 enum ChannelType {
   audio
   video
   text
+}
+
+enum RoleType {
+  guest
+  moderator
 }
 
 model users {
@@ -34,6 +36,7 @@ model users {
 
   Servers  servers[]
   Channels channels[]
+  Members  members[]
 }
 
 model servers {
@@ -48,6 +51,7 @@ model servers {
   // usersId     String?
 
   channels channels[]
+  members  members[]
 
   @@unique([userId, name])
 }
@@ -64,4 +68,16 @@ model channels {
   updated_at DateTime    @default(now())
 
   @@unique([serverId, name])
+}
+
+model members {
+  id     String @id() @default(uuid())
+  userId String @unique()
+
+  users      users?   @relation(fields: [userId], references: [id])
+  role       RoleType @default(guest)
+  serverId   String?
+  servers    servers? @relation(fields: [serverId], references: [id])
+  created_at DateTime @default(now())
+  updated_at DateTime @default(now())
 }

@@ -1,7 +1,12 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { CreateServerDto } from './dto/create-server.dto';
 import { updateServerDto } from './dto/update-server.dto';
 import { PrismaService } from 'src/common/services/prisma.service';
+import { RoleType } from '@prisma/client';
 // import * as fs from 'fs';
 
 @Injectable()
@@ -54,6 +59,18 @@ export class ServerService {
         },
       });
 
+      const memberServers = await this.prisma.members.findMany({
+        where: {
+          userId: userId,
+        },
+        include: {
+          servers: true,
+        },
+      });
+
+      memberServers.map((item, index) => {
+        userServers.push(item.servers);
+      });
       return {
         statusCode: 201,
         message: 'Servers Fetched Successfully',
@@ -68,14 +85,14 @@ export class ServerService {
     try {
       const getServer = await this.prisma.servers.findFirst({
         where: {
-          userId: userId,
+          // userId: userId,
           id: id,
         },
       });
 
       if (getServer) {
         return {
-          statusCode: 201,
+          statusCode: 200,
           message: 'Server Fetched Successfully',
           server: getServer,
         };
@@ -87,7 +104,12 @@ export class ServerService {
     }
   }
 
-  async update(id: string, updateServerDto: updateServerDto, image: string,userId:string) {
+  async update(
+    id: string,
+    updateServerDto: updateServerDto,
+    image: string,
+    userId: string,
+  ) {
     try {
       // const getServer = await this.prisma.servers.findFirst({
       //   where: {
@@ -136,6 +158,135 @@ export class ServerService {
       } else {
         return { statusCode: 404, message: 'Server Does not Exists' };
       }
+    } catch (error) {
+      throw new InternalServerErrorException();
+    }
+  }
+
+  async joinServer(serverId: string, userId: string) {
+    try {
+      const getServer = await this.prisma.servers.findFirst({
+        where: {
+          id: serverId,
+        },
+      });
+
+      if (getServer.userId == userId) {
+        return { statusCode: 402, message: 'You Cannot Join Your Own Channel' };
+      }
+
+      const checkMember = await this.prisma.members.findFirst({
+        where: {
+          serverId,
+          userId,
+        },
+      });
+
+      if (checkMember) {
+        return { statusCode: 303, message: 'You Are Already Member' };
+      } else {
+        const joinIn = await this.prisma.members.create({
+          data: {
+            userId,
+            serverId,
+          },
+        });
+
+        if (joinIn) {
+          return { statusCode: 201, message: 'You Succesfully Joined Server' };
+        } else {
+          throw new InternalServerErrorException();
+        }
+      }
+    } catch (error) {
+      throw new InternalServerErrorException();
+    }
+  }
+  async leaveServer(serverId: string, userId: string) {
+    try {
+      const removeMember = await this.prisma.members.delete({
+        where: {
+          userId: userId,
+          serverId: serverId,
+        },
+      });
+
+      if (removeMember) {
+        return { statusCode: 201, message: 'Server Left Successfully' };
+      } else {
+        throw new InternalServerErrorException();
+      }
+    } catch (error) {
+      throw new InternalServerErrorException();
+    }
+  }
+
+  async getRole(serverId: string, userId: string) {
+    try {
+      const server = await this.prisma.servers.findFirst({
+        where: {
+          id: serverId,
+        },
+      });
+      if (server.userId == userId) {
+        return {
+          statusCode: 200,
+          message: 'Role Fetched Successfully',
+          role: RoleType.moderator,
+        };
+      }
+      const result = await this.prisma.members.findFirst({
+        where: {
+          serverId,
+          userId,
+        },
+      });
+      // console.log(result.role);
+      if (result) {
+        return {
+          statusCode: 201,
+          message: 'Role Fetched Successfully',
+          role: result.role,
+        };
+      } else {
+        return {
+          statusCode: 402,
+          message: 'You are Not Member of This Server',
+          role: RoleType.guest,
+        };
+      }
+    } catch (error) {
+      throw new InternalServerErrorException();
+    }
+  }
+
+  async getMembers(serverId: string, userId: string) {
+    try {
+      const server = await this.prisma.servers.findFirst({
+        where: {
+          userId,
+          id: serverId,
+        },
+      });
+
+      if (server.userId == userId) {
+        const members = await this.prisma.members.findMany({
+          where: {
+            serverId: serverId,
+          },
+          include: {
+            users: true,
+          },
+        });
+
+        return {
+          statusCode: 201,
+          message: 'Members Fetched Successfully',
+          members: members || [],
+        };
+      }
+
+      throw new ForbiddenException();
     } catch (error) {
       throw new InternalServerErrorException();
     }

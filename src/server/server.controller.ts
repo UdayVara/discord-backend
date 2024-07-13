@@ -18,6 +18,7 @@ import { AuthGuard } from 'src/Guards/auth/auth.guard';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
+import { SetRoleDto } from './dto/set-role.dto';
 
 @ApiBearerAuth('JWT-auth')
 @UseGuards(AuthGuard)
@@ -105,12 +106,17 @@ export class ServerController {
     return this.serverService.leaveServer(serverId, req.user.id);
   }
 
-  @Get("role/:id")
+  @Get('role/:id')
   getRole(@Param('id') serverId, @Req() req) {
     return this.serverService.getRole(serverId, req.user.id);
   }
 
-  @Get("members/:id")
+  @Patch('role/set')
+  setRole(@Body() data: SetRoleDto, @Req() req) {
+    return this.serverService.setRole(data, req.user.id);
+  }
+
+  @Get('members/:id')
   getMembers(@Param('id') serverId, @Req() req) {
     return this.serverService.getMembers(serverId, req.user.id);
   }

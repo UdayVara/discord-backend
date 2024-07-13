@@ -47,7 +47,7 @@ export class ChannelsService {
     try {
       const userChannels = await this.prisma.channels.findMany({
         where: {
-          userId: userId,
+          
           serverId: serverId,
         },
       });
@@ -80,12 +80,16 @@ export class ChannelsService {
 
   async findOne(id: string, userId: string) {
     try {
+
+      
       const getChannel = await this.prisma.channels.findFirst({
         where: {
           userId: userId,
           id: id,
         },
       });
+
+
 
       if (getChannel) {
         return {

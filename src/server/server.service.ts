@@ -7,6 +7,7 @@ import { CreateServerDto } from './dto/create-server.dto';
 import { updateServerDto } from './dto/update-server.dto';
 import { PrismaService } from 'src/common/services/prisma.service';
 import { RoleType } from '@prisma/client';
+import { SetRoleDto } from './dto/set-role.dto';
 // import * as fs from 'fs';
 
 @Injectable()
@@ -244,7 +245,7 @@ export class ServerService {
       // console.log(result.role);
       if (result) {
         return {
-          statusCode: 201,
+          statusCode: 200,
           message: 'Role Fetched Successfully',
           role: result.role,
         };
@@ -259,17 +260,61 @@ export class ServerService {
       throw new InternalServerErrorException();
     }
   }
+  async setRole(setRole: SetRoleDto, userId: string) {
+    try {
+      const member = await this.prisma.members.findFirst({
+        where: {
+          id: setRole.memberId,
+        },
+        include: {
+          servers: true,
+        },
+      });
+
+      if (
+        member.servers.userId == userId ||
+        member.role == RoleType.moderator
+      ) {
+        const updateRole = await this.prisma.members.update({
+          where: {
+            id: setRole.memberId,
+          },
+          data: {
+            role: setRole.role,
+          },
+        });
+
+        if (updateRole) {
+          return {
+            statusCode: 201,
+            message: 'Role Updated Successfully',
+          };
+        } else {
+          return {
+            statusCode: 400,
+            message: 'Failed to Update Role',
+          };
+        }
+      }
+ 
+      return {
+        statusCode: 400,
+        message: "You Don't have acess to Perform this operation",
+      };
+    } catch (error) {
+      throw new InternalServerErrorException();
+    }
+  }
 
   async getMembers(serverId: string, userId: string) {
     try {
       const server = await this.prisma.servers.findFirst({
         where: {
-          userId,
           id: serverId,
         },
       });
-
-      if (server.userId == userId) {
+      console.debug(server,"server")
+      // if (server.userId == userId ) {
         const members = await this.prisma.members.findMany({
           where: {
             serverId: serverId,
@@ -284,10 +329,11 @@ export class ServerService {
           message: 'Members Fetched Successfully',
           members: members || [],
         };
-      }
+      // }
 
-      throw new ForbiddenException();
+      // throw new ForbiddenException();
     } catch (error) {
+      console.log(error)
       throw new InternalServerErrorException();
     }
   }

@@ -47,7 +47,6 @@ export class ChannelsService {
     try {
       const userChannels = await this.prisma.channels.findMany({
         where: {
-          
           serverId: serverId,
         },
       });
@@ -80,16 +79,12 @@ export class ChannelsService {
 
   async findOne(id: string, userId: string) {
     try {
-
-      
       const getChannel = await this.prisma.channels.findFirst({
         where: {
           userId: userId,
           id: id,
         },
       });
-
-
 
       if (getChannel) {
         return {
@@ -155,6 +150,51 @@ export class ChannelsService {
       } else {
         return { statusCode: 404, message: 'Channel Does not Exists' };
       }
+    } catch (error) {
+      throw new InternalServerErrorException();
+    }
+  }
+
+  async search(query: string, serverId) {
+    try {
+      const channels = await this.prisma.channels.findMany({
+        where: {
+          name: {
+            contains: query,
+          },
+          serverId: serverId,
+        },
+      });
+
+      const groupedChannels: any = channels.reduce((acc, item) => {
+        // If the type doesn't exist in the accumulator, create an array for it
+        if (!acc[item.type]) {
+          acc[item.type] = [];
+        }
+
+        // Push the current item into the array for its type
+        acc[item.type].push(item);
+
+        return acc;
+      }, {});
+
+      const members = await this.prisma.members.findMany({
+        where: {
+          users: {
+            OR: [{ username: { contains: query }, email: { contains: query } }],
+          },
+          serverId: serverId,
+        },
+      });
+
+      return {
+        statusCode: 200,
+        message: 'Result Fetched Successfully',
+        textChannels: groupedChannels?.text || [],
+        audioChannels: groupedChannels?.audio || [],
+        videoChannels: groupedChannels?.video || [],
+        members: members,
+      };
     } catch (error) {
       throw new InternalServerErrorException();
     }

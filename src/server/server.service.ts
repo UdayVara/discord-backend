@@ -313,7 +313,7 @@ export class ServerService {
           id: serverId,
         },
       });
-      console.debug(server,"server")
+      // console.debug(server,"server")
       // if (server.userId == userId ) {
         const members = await this.prisma.members.findMany({
           where: {

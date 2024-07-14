@@ -8,6 +8,7 @@ import { ServerModule } from './server/server.module';
 import { join } from 'path';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { ChannelsModule } from './channels/channels.module';
+import { ChatModule } from './chat/chat.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { ChannelsModule } from './channels/channels.module';
     AuthModule,
     ServerModule,
     ChannelsModule,
+    ChatModule,
   ],
   controllers: [AppController],
   providers: [AppService, CommonModule],

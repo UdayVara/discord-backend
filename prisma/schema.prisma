@@ -13,8 +13,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-
-
 enum ChannelType {
   audio
   video
@@ -74,10 +72,23 @@ model members {
   id     String @id() @default(uuid())
   userId String @unique()
 
-  users      users?   @relation(fields: [userId], references: [id])
-  role       RoleType @default(guest)
+  users      users?    @relation(fields: [userId], references: [id])
+  role       RoleType  @default(guest)
   serverId   String?
-  servers    servers? @relation(fields: [serverId], references: [id])
+  servers    servers?  @relation(fields: [serverId], references: [id])
+  created_at DateTime  @default(now())
+  updated_at DateTime  @default(now())
+  message    messages[]
+}
+
+model messages {
+  id         String   @id() @default(uuid())
+  memberId   String
+  message    String
+  fileurl    String
+  isEdited   Boolean
+  isDeleted  Boolean
   created_at DateTime @default(now())
   updated_at DateTime @default(now())
+  members    members  @relation(fields: [memberId], references: [id])
 }

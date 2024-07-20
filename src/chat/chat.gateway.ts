@@ -15,7 +15,7 @@ import { Server, Socket } from 'socket.io';
   cors: {
     origin: 'http://localhost:3000',
   },
-  // transports:["websocket"]
+  transports:["websocket","polling"]
 
 })
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {

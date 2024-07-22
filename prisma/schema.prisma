@@ -31,7 +31,7 @@ model users {
   password   String
   created_at DateTime @default(now())
   updated_at DateTime @default(now())
-
+  socketId    String?
   Servers  servers[]
   Channels channels[]
   Members  members[]

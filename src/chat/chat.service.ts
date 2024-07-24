@@ -4,44 +4,64 @@ import { UpdateChatDto } from './dto/update-chat.dto';
 import { JoinChatDto } from './dto/join-chat.dto';
 import { WsException } from '@nestjs/websockets';
 import { PrismaService } from 'src/common/services/prisma.service';
+import { SendMessageDto } from './dto/send-message.dto';
 
 @Injectable()
 export class ChatService {
-  constructor(private readonly prisma:PrismaService){}
+  constructor(private readonly prisma: PrismaService) {}
   create(createChatDto: CreateChatDto) {
     return 'This action adds a new chat';
   }
 
-  async setSocketId(socketId,user){
+  async setSocketId(socketId: string, user: string) {
     try {
-      console.log("user id",user)
-      const updateSocket = this.prisma.users.update({
+      // console.log("user id",user)
+      const updateSocket = await this.prisma.users.update({
+        where: {
+          id: user,
+        },
+        data: {
+          socketId,
+        },
+      });
+
+      if (updateSocket) {
+        return true;
+      }
+    } catch (error) {
+      console.log('error', error);
+      throw new WsException('Internal Server Error');
+    }
+  }
+
+  async resetSocketId(userId: string) {
+    try {
+      const res = await this.prisma.users.update({
         where:{
-          id:user.id
+          id:userId
         },
         data:{
-          socketId
+          socketId:""
         }
-      })
+      });
 
-      if(updateSocket){
+      if(res){
         return true
       }
     } catch (error) {
-      console.log("error",error)
-      throw new WsException("Internal Server Error")
+      return false;
     }
   }
-  async joinRoom(joinChatDto:JoinChatDto){
+  async joinRoom(joinChatDto: JoinChatDto) {
     try {
       const channelId = await this.prisma.channels.findFirst({
-        where:{
-          id:joinChatDto.channelId
-        }
-      })
-      return channelId.id
+        where: {
+          id: joinChatDto.channelId,
+        },
+      });
+      return channelId.id;
     } catch (error) {
-      throw new WsException("Internal Server Error")
+      throw new WsException('Internal Server Error');
     }
   }
 
@@ -49,15 +69,7 @@ export class ChatService {
     return `This action returns all chat`;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} chat`;
-  }
+  async sendMessage(sendMessageDto:SendMessageDto,userId){
 
-  update(id: number, updateChatDto: UpdateChatDto) {
-    return `This action updates a #${id} chat`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} chat`;
   }
 }

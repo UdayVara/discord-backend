@@ -25,16 +25,17 @@ enum RoleType {
 }
 
 model users {
-  id         String   @id() @default(uuid())
+  id         String     @id() @default(uuid())
   username   String
   email      String
   password   String
-  created_at DateTime @default(now())
-  updated_at DateTime @default(now())
-  socketId    String?
-  Servers  servers[]
-  Channels channels[]
-  Members  members[]
+  created_at DateTime   @default(now())
+  updated_at DateTime   @default(now())
+  socketId   String?
+  Servers    servers[]
+  Channels   channels[]
+  Members    members[]
+  messages   messages[]
 }
 
 model servers {
@@ -64,6 +65,7 @@ model channels {
   servers    servers     @relation(fields: [serverId], references: [id], onDelete: Cascade)
   created_at DateTime    @default(now())
   updated_at DateTime    @default(now())
+  messages   messages[]
 
   @@unique([serverId, name])
 }
@@ -72,23 +74,24 @@ model members {
   id     String @id() @default(uuid())
   userId String @unique()
 
-  users      users?    @relation(fields: [userId], references: [id])
-  role       RoleType  @default(guest)
+  users      users?   @relation(fields: [userId], references: [id])
+  role       RoleType @default(guest)
   serverId   String?
-  servers    servers?  @relation(fields: [serverId], references: [id])
-  created_at DateTime  @default(now())
-  updated_at DateTime  @default(now())
-  message    messages[]
+  servers    servers? @relation(fields: [serverId], references: [id])
+  created_at DateTime @default(now())
+  updated_at DateTime @default(now())
 }
 
 model messages {
   id         String   @id() @default(uuid())
-  memberId   String
+  userId     String
   message    String
-  fileurl    String
+  fileurl    String?
   isEdited   Boolean
   isDeleted  Boolean
   created_at DateTime @default(now())
   updated_at DateTime @default(now())
-  members    members  @relation(fields: [memberId], references: [id])
+  user       users    @relation(fields: [userId], references: [id])
+  channelId  String
+  channel    channels @relation(fields: [channelId], references: [id])
 }

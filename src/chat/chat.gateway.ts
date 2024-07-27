@@ -31,17 +31,26 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @WebSocketServer() server: Server;
   async handleConnection(client: Socket) {
-    console.log('User Connected With ID : ', client.id,client.handshake.auth.id);
+    console.log(
+      'User Connected With ID : ',
+      client.id,
+      client.handshake.auth.id,
+    );
 
-    const res = await this.chatService.setSocketId(client.id,client.handshake.auth.id)
-
-    console.log(res)
-    
+    const res = await this.chatService.setSocketId(
+      client.id,
+      client.handshake.auth.id,
+    );
+    //
+    // console.log(res)
   }
 
   async handleDisconnect(client: Socket) {
-    console.log('User Disconnected With ID : ', client.id,client.handshake.auth.id);
-
+    console.log(
+      'User Disconnected With ID : ',
+      client.id,
+      client.handshake.auth.id,
+    );
 
     await this.chatService.resetSocketId(client.handshake.auth.id);
   }
@@ -52,23 +61,46 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     return { statusCode: 201, message: 'Event Recieved' };
   }
   @SubscribeMessage('join')
-  async joinRoom(@ConnectedSocket() socket:Socket,@MessageBody() joinChatDto: JoinChatDto) {
-    const channelId =  await this.chatService.joinRoom(joinChatDto);
+  async joinRoom(
+    @ConnectedSocket() socket: Socket,
+    @MessageBody() joinChatDto: JoinChatDto,
+  ) {
+    const rooms = Array.from(socket.rooms).slice(1); // Get all rooms except the default room which is the socket id
+    rooms.forEach((room) => socket.leave(room));
+    const channelId = await this.chatService.joinRoom(joinChatDto);
 
-    if(channelId){
-      console.log(`socket ${socket.id} Joined ${channelId}`)
-      socket.join(channelId)
-    }else{
-      throw new WsException("Invalid Channel ID")
+    if (channelId) {
+      console.log(`socket ${socket.id} Joined ${channelId}`);
+      socket.join(channelId);
+    } else {
+      throw new WsException('Invalid Channel ID');
     }
   }
 
-  @SubscribeMessage("send-message")
-  async sendMessage(@ConnectedSocket() socket:Socket,@MessageBody() sendMessageDto:SendMessageDto){
-    console.log("Message Received",sendMessageDto)
+  @SubscribeMessage('send-message')
+  async sendMessage(
+    @ConnectedSocket() socket: Socket,
+    @MessageBody() sendMessageDto: SendMessageDto,
+  ) {
+    try {
+      const res = await this.chatService.sendMessage(
+        sendMessageDto,
+        socket.handshake.auth.id,
+      );
+
+      if (res.success) {
+        socket
+          .to(sendMessageDto.channelId)
+          .emit('recieve-messages', res.message);
+      } else {
+        throw new WsException('Internal Server Error');
+      }
+    } catch (error) {
+      throw new WsException(error.message || 'Internal Server Error');
+    }
+    console.log('Message Received', sendMessageDto);
   }
 
-  
   @SubscribeMessage('get-error')
   getException(@ConnectedSocket() client: Socket) {
     console.log('Error Event Received');
@@ -80,5 +112,4 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   findAll() {
     return this.chatService.findAll();
   }
-
 }

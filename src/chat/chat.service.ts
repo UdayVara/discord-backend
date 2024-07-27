@@ -69,7 +69,27 @@ export class ChatService {
     return `This action returns all chat`;
   }
 
-  async sendMessage(sendMessageDto:SendMessageDto,userId){
+  async sendMessage(sendMessageDto:SendMessageDto,userId:string){
+    try {
+      const message = await this.prisma.messages.create({
+        data:{
+          isDeleted:false,
+          isEdited:false,
+          message:sendMessageDto.message,
+          channelId:sendMessageDto.channelId,
+          fileurl:"",
+          userId:userId
+        }
+      })
 
+      if(message){
+        return {success:true,message}
+      }else{
+        return {success:false}
+      }
+    } catch (error) {
+      throw new WsException(error.message || "Internal Server Error")
+    }
+    
   }
 }

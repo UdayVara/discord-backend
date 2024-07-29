@@ -2,10 +2,11 @@ import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { PrismaService } from 'src/common/services/prisma.service';
 import { createChannelDto } from './dto/createchannel.dto';
 import { updateChannelDto } from './dto/updatechannel.dto';
+import { ChatService } from 'src/chat/chat.service';
 
 @Injectable()
 export class ChannelsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService,private readonly chatService:ChatService) {}
 
   async create(createChanneldto: createChannelDto, userId: string) {
     try {
@@ -199,4 +200,6 @@ export class ChannelsService {
       throw new InternalServerErrorException();
     }
   }
+
+  
 }

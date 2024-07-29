@@ -16,13 +16,14 @@ import { createChannelDto } from './dto/createchannel.dto';
 import { updateChannelDto } from './dto/updatechannel.dto';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { AuthGuard } from 'src/Guards/auth/auth.guard';
+import { ChatService } from 'src/chat/chat.service';
 
 @ApiTags('Channel')
 @UseGuards(AuthGuard)
 @ApiBearerAuth('JWT-auth')
 @Controller('channel')
 export class ChannelsController {
-  constructor(private readonly channelsService: ChannelsService) {}
+  constructor(private readonly channelsService: ChannelsService,private readonly chatService:ChatService) {}
 
   @Post('')
   async create(@Body() createChanneldto: createChannelDto, @Req() req) {
@@ -45,6 +46,13 @@ export class ChannelsController {
     @Query('query') query: string,
   ) {
     return this.channelsService.search(query, serverId);
+  }
+  @Get('/chats/:id')
+  async getChats(
+    @Param('id') channelId: string,
+  ) {
+    // console.log("chats Request called for channel id" + channelId)
+    return await this.chatService.findAll(channelId);
   }
 
   @Patch(':id')

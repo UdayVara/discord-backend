@@ -9,8 +9,7 @@ import {
   ConnectedSocket,
 } from '@nestjs/websockets';
 import { ChatService } from './chat.service';
-import { CreateChatDto } from './dto/create-chat.dto';
-import { UpdateChatDto } from './dto/update-chat.dto';
+
 import { Server, Socket } from 'socket.io';
 import { UseFilters, UseGuards } from '@nestjs/common';
 import { CustomWsExceptionFilter } from 'src/http Filters/socket.filter';
@@ -37,10 +36,13 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       client.handshake.auth.id,
     );
 
-    const res = await this.chatService.setSocketId(
-      client.id,
+    await this.chatService.setSocketId(client.id, client.handshake.auth.id);
+    const serverList = await this.chatService.getAllServers(
       client.handshake.auth.id,
     );
+
+    client.join([...serverList]);
+
     //
     // console.log(res)
   }
@@ -51,7 +53,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       client.id,
       client.handshake.auth.id,
     );
-
+    client.disconnect();
     await this.chatService.resetSocketId(client.handshake.auth.id);
   }
 
@@ -87,29 +89,32 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         sendMessageDto,
         socket.handshake.auth.id,
       );
-
+      // console.log(res,"Result")
       if (res.success) {
         socket
           .to(sendMessageDto.channelId)
-          .emit('recieve-messages', res.message);
+          .emit('recieve-message', res.message);
+        socket.emit('recieve-message', res.message);
+        socket.to(res.message?.channel?.serverId).emit('new-notification', {
+          success: true,
+          message: `New Message from ${res?.message?.user?.username} in ${res.message?.channel?.name} Channel`,
+        });
       } else {
         throw new WsException('Internal Server Error');
       }
     } catch (error) {
       throw new WsException(error.message || 'Internal Server Error');
     }
-    console.log('Message Received', sendMessageDto);
+    // console.log('Message Received', sendMessageDto);
   }
 
-  @SubscribeMessage('get-error')
-  getException(@ConnectedSocket() client: Socket) {
-    console.log('Error Event Received');
-    // client.emit("error",{message:"Error Event Emitted"})
-    throw new WsException('Custom Error MEssage');
-  }
+  // @SubscribeMessage('get-error')
+  // getException(@ConnectedSocket() client: Socket) {
+  //   console.log('Error Event Received');
+  //   // client.emit("error",{message:"Error Event Emitted"})
+  //   throw new WsException('Custom Error MEssage');
+  // }
 
   @SubscribeMessage('findAllChat')
-  findAll() {
-    return this.chatService.findAll();
-  }
+  findAll() {}
 }

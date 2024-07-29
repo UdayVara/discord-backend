@@ -1,6 +1,5 @@
-import { Injectable } from '@nestjs/common';
-import { CreateChatDto } from './dto/create-chat.dto';
-import { UpdateChatDto } from './dto/update-chat.dto';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
+
 import { JoinChatDto } from './dto/join-chat.dto';
 import { WsException } from '@nestjs/websockets';
 import { PrismaService } from 'src/common/services/prisma.service';
@@ -9,7 +8,7 @@ import { SendMessageDto } from './dto/send-message.dto';
 @Injectable()
 export class ChatService {
   constructor(private readonly prisma: PrismaService) {}
-  create(createChatDto: CreateChatDto) {
+  create() {
     return 'This action adds a new chat';
   }
 
@@ -37,16 +36,16 @@ export class ChatService {
   async resetSocketId(userId: string) {
     try {
       const res = await this.prisma.users.update({
-        where:{
-          id:userId
+        where: {
+          id: userId,
         },
-        data:{
-          socketId:""
-        }
+        data: {
+          socketId: '',
+        },
       });
 
-      if(res){
-        return true
+      if (res) {
+        return true;
       }
     } catch (error) {
       return false;
@@ -65,31 +64,88 @@ export class ChatService {
     }
   }
 
-  findAll() {
-    return `This action returns all chat`;
+  async findAll(channelId: string) {
+    try {
+      const chats = await this.prisma.messages.findMany({
+        where: {
+          channelId,
+        },
+        include: {
+          user: true,
+        },
+        orderBy: {
+          updated_at: 'asc',
+        },
+      });
+      return { statusCode: 200, message: 'Chats Fetched Successfully', chats };
+    } catch (error) {
+      console.debug(error);
+      throw new InternalServerErrorException(
+        error.message || 'Internal Server Error',
+      );
+    }
   }
 
-  async sendMessage(sendMessageDto:SendMessageDto,userId:string){
+  async sendMessage(sendMessageDto: SendMessageDto, userId: string) {
     try {
       const message = await this.prisma.messages.create({
-        data:{
-          isDeleted:false,
-          isEdited:false,
-          message:sendMessageDto.message,
-          channelId:sendMessageDto.channelId,
-          fileurl:"",
-          userId:userId
+        data: {
+          isDeleted: false,
+          isEdited: false,
+          message: sendMessageDto.message,
+          channelId: sendMessageDto.channelId,
+          fileurl: '',
+          userId: userId,
+        },
+        include:{
+          user:true,
+          channel:true
         }
-      })
+      });
 
-      if(message){
-        return {success:true,message}
-      }else{
-        return {success:false}
+      if (message) {
+        return { success: true, message };
+      } else {
+        return { success: false };
       }
     } catch (error) {
-      throw new WsException(error.message || "Internal Server Error")
+      throw new WsException(error.message || 'Internal Server Error');
     }
-    
+  }
+
+  async getAllServers(userId:string){
+    const userServers = await this.prisma.servers.findMany({
+      where: {
+        userId: userId,
+      },
+      select:{
+        id:true
+      }
+    });
+
+    const memberServers = await this.prisma.members.findMany({
+      where: {
+        userId: userId,
+      },
+      include: {
+        servers: {
+          select:{
+            id:true
+          }
+        },
+        
+      },
+    });
+
+    memberServers.map((item) => {
+      userServers.push(item.servers);
+    });
+
+    const idArray = []
+
+    userServers.map((item)=>{
+      idArray.push(item.id)
+    })
+    return idArray || []
   }
 }

@@ -296,7 +296,7 @@ export class ServerService {
           };
         }
       }
- 
+
       return {
         statusCode: 400,
         message: "You Don't have acess to Perform this operation",
@@ -312,28 +312,33 @@ export class ServerService {
         where: {
           id: serverId,
         },
+        include: {
+          users: true,
+        },
       });
       // console.debug(server,"server")
       // if (server.userId == userId ) {
-        const members = await this.prisma.members.findMany({
-          where: {
-            serverId: serverId,
-          },
-          include: {
-            users: true,
-          },
-        });
+      const members = await this.prisma.members.findMany({
+        where: {
+          serverId: serverId,
+        },
+        include: {
+          users: true,
+        },
+      });
 
-        return {
-          statusCode: 201,
-          message: 'Members Fetched Successfully',
-          members: members || [],
-        };
+      const temp: any = { ...server };
+      temp.owner = true;
+      return {
+        statusCode: 201,
+        message: 'Members Fetched Successfully',
+        members: [temp, ...members] || [],
+      };
       // }
 
       // throw new ForbiddenException();
     } catch (error) {
-      console.log(error)
+      console.log(error);
       throw new InternalServerErrorException();
     }
   }

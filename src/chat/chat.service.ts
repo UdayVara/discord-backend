@@ -64,20 +64,48 @@ export class ChatService {
     }
   }
 
-  async findAll(channelId: string) {
+  async findAll(isPersonal: boolean,senderId:string, channelId: string) {
     try {
-      const chats = await this.prisma.messages.findMany({
-        where: {
-          channelId,
-        },
-        include: {
-          user: true,
-        },
-        orderBy: {
-          updated_at: 'asc',
-        },
-      });
-      return { statusCode: 200, message: 'Chats Fetched Successfully', chats };
+      if (!isPersonal) {
+        const chats = await this.prisma.messages.findMany({
+          where: {
+            channelId,
+          },
+          include: {
+            user: true,
+          },
+          orderBy: {
+            updated_at: 'asc',
+          },
+        });
+        return {
+          statusCode: 200,
+          message: 'Chats Fetched Successfully',
+          chats,
+        };
+      } else {
+        const chats = await this.prisma.messages.findMany({
+          where: {
+            OR: [
+              { AND: [{ receiverId: channelId }, { userId: senderId }] },
+              { AND: [{ receiverId: senderId }, { userId: channelId }] },
+            ],
+            // receiverId: channelId,
+          },
+          include: {
+            user: true,
+            receivers: true,
+          },
+          orderBy: {
+            updated_at: 'asc',
+          },
+        });
+        return {
+          statusCode: 200,
+          message: 'Chats Fetched Successfully',
+          chats,
+        };
+      }
     } catch (error) {
       console.debug(error);
       throw new InternalServerErrorException(
@@ -93,14 +121,20 @@ export class ChatService {
           isDeleted: false,
           isEdited: false,
           message: sendMessageDto.message,
-          channelId: sendMessageDto.channelId,
+          channelId: sendMessageDto.isPersonal
+            ? null
+            : sendMessageDto.channelId,
           fileurl: '',
           userId: userId,
+          receiverId: sendMessageDto.isPersonal
+            ? sendMessageDto.channelId
+            : null,
         },
-        include:{
-          user:true,
-          channel:true
-        }
+        include: {
+          user: true,
+          channel: true,
+          receivers: true,
+        },
       });
 
       if (message) {
@@ -113,14 +147,14 @@ export class ChatService {
     }
   }
 
-  async getAllServers(userId:string){
+  async getAllServers(userId: string) {
     const userServers = await this.prisma.servers.findMany({
       where: {
         userId: userId,
       },
-      select:{
-        id:true
-      }
+      select: {
+        id: true,
+      },
     });
 
     const memberServers = await this.prisma.members.findMany({
@@ -129,11 +163,10 @@ export class ChatService {
       },
       include: {
         servers: {
-          select:{
-            id:true
-          }
+          select: {
+            id: true,
+          },
         },
-        
       },
     });
 
@@ -141,11 +174,11 @@ export class ChatService {
       userServers.push(item.servers);
     });
 
-    const idArray = []
+    const idArray = [];
 
-    userServers.map((item)=>{
-      idArray.push(item.id)
-    })
-    return idArray || []
+    userServers.map((item) => {
+      idArray.push(item.id);
+    });
+    return idArray || [];
   }
 }

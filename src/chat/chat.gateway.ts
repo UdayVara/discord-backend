@@ -91,14 +91,23 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       );
       // console.log(res,"Result")
       if (res.success) {
-        socket
-          .to(sendMessageDto.channelId)
-          .emit('recieve-message', res.message);
-        socket.emit('recieve-message', res.message);
-        socket.to(res.message?.channel?.serverId).emit('new-notification', {
-          success: true,
-          message: `New Message from ${res?.message?.user?.username} in ${res.message?.channel?.name} Channel`,
-        });
+        if (!sendMessageDto.isPersonal) {
+          socket
+            .to(sendMessageDto.channelId)
+            .emit('recieve-message', res.message);
+          socket.emit('recieve-message', res.message);
+          socket.to(res.message?.channel?.serverId).emit('new-notification', {
+            success: true,
+            message: `New Message from ${res?.message?.user?.username} in ${res.message?.channel?.name} Channel`,
+          });
+        }else{
+          this.server.to(res.message?.receivers?.socketId).emit('recieve-message', res.message)
+          socket.emit('recieve-message', res.message);
+          this.server.to(res.message?.receivers?.socketId).emit('new-notification', {
+            success: true,
+            message:`New Message from ${res?.message?.user?.username}`,
+          })
+        }
       } else {
         throw new WsException('Internal Server Error');
       }

@@ -36,6 +36,7 @@ model users {
   Channels   channels[]
   Members    members[]
   messages   messages[]
+  message messages[] @relation(name: "receiverConstraint")
 }
 
 model servers {
@@ -83,15 +84,17 @@ model members {
 }
 
 model messages {
-  id         String   @id() @default(uuid())
+  id         String    @id() @default(uuid())
   userId     String
   message    String
   fileurl    String?
   isEdited   Boolean
   isDeleted  Boolean
-  created_at DateTime @default(now())
-  updated_at DateTime @default(now())
-  user       users    @relation(fields: [userId], references: [id])
-  channelId  String
-  channel    channels @relation(fields: [channelId], references: [id])
+  created_at DateTime  @default(now())
+  updated_at DateTime  @default(now())
+  user       users     @relation(fields: [userId], references: [id])
+  channelId  String?
+  channel    channels? @relation(fields: [channelId], references: [id])
+  receiverId String?
+  receivers  users?    @relation(name: "receiverConstraint", fields: [receiverId], references: [id])
 }

@@ -50,9 +50,11 @@ export class ChannelsController {
   @Get('/chats/:id')
   async getChats(
     @Param('id') channelId: string,
+    @Query("isPersonal") isPesonal:boolean,
+    @Req() req,
   ) {
     // console.log("chats Request called for channel id" + channelId)
-    return await this.chatService.findAll(channelId);
+    return await this.chatService.findAll(isPesonal,req?.user.id,channelId);
   }
 
   @Patch(':id')

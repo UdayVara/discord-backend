@@ -1,4 +1,4 @@
-import { IsString } from 'class-validator';
+import { IsBoolean, IsString } from 'class-validator';
 
 export class SendMessageDto {
   @IsString()
@@ -7,5 +7,7 @@ export class SendMessageDto {
   @IsString()
   message:string;
 
+  @IsBoolean()
+  isPersonal:boolean;
 
 }

@@ -16,6 +16,8 @@ import { CustomWsExceptionFilter } from 'src/http Filters/socket.filter';
 import { SocketAuthGuard } from 'src/Guards/socket-auth/socket-auth.guard';
 import { JoinChatDto } from './dto/join-chat.dto';
 import { SendMessageDto } from './dto/send-message.dto';
+import {v2 as cloudinary} from "cloudinary"
+import { Readable } from 'stream';
 
 @WebSocketGateway({
   cors: {
@@ -85,9 +87,34 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() sendMessageDto: SendMessageDto,
   ) {
     try {
+      let file_url;
+      // console.log(sendMessageDto.file)
+      if (sendMessageDto.file) {
+
+        cloudinary.config({
+          api_key: process.env.CLOUDINARY_API_KEY,
+          api_secret:process.env.CLOUDINARY_API_SECRET,
+          cloud_name:process.env.CLOUDINARY_CLOUD_NAME,
+          secure:true
+        })
+        const stream = Readable.from(sendMessageDto.file)
+        const upload_result:any = await new Promise((resolve,reject)=>{
+          const streamLoad = cloudinary.uploader.upload_stream({resource_type:"auto",folder:"discord-clone"},(err,result)=>{
+            if(err){
+              console.log(err)
+              return reject(err)
+            }
+            resolve(result)
+          })
+          stream.pipe(streamLoad)
+        })
+
+        file_url = upload_result.secure_url
+      }
       const res = await this.chatService.sendMessage(
         sendMessageDto,
         socket.handshake.auth.id,
+        file_url || "",
       );
       // console.log(res,"Result")
       if (res.success) {
@@ -100,13 +127,17 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
             success: true,
             message: `New Message from ${res?.message?.user?.username} in ${res.message?.channel?.name} Channel`,
           });
-        }else{
-          this.server.to(res.message?.receivers?.socketId).emit('recieve-message', res.message)
+        } else {
+          this.server
+            .to(res.message?.receivers?.socketId)
+            .emit('recieve-message', res.message);
           socket.emit('recieve-message', res.message);
-          this.server.to(res.message?.receivers?.socketId).emit('new-notification', {
-            success: true,
-            message:`New Message from ${res?.message?.user?.username}`,
-          })
+          this.server
+            .to(res.message?.receivers?.socketId)
+            .emit('new-notification', {
+              success: true,
+              message: `New Message from ${res?.message?.user?.username}`,
+            });
         }
       } else {
         throw new WsException('Internal Server Error');

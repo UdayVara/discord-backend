@@ -10,4 +10,5 @@ export class SendMessageDto {
   @IsBoolean()
   isPersonal:boolean;
 
+  file:any
 }

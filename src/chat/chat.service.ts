@@ -114,7 +114,7 @@ export class ChatService {
     }
   }
 
-  async sendMessage(sendMessageDto: SendMessageDto, userId: string) {
+  async sendMessage(sendMessageDto: SendMessageDto, userId: string,file:any) {
     try {
       const message = await this.prisma.messages.create({
         data: {
@@ -124,7 +124,7 @@ export class ChatService {
           channelId: sendMessageDto.isPersonal
             ? null
             : sendMessageDto.channelId,
-          fileurl: '',
+          fileurl: file || "",
           userId: userId,
           receiverId: sendMessageDto.isPersonal
             ? sendMessageDto.channelId

@@ -32,7 +32,7 @@ export class ServerService {
       const newServer = await this.prisma.servers.create({
         data: {
           name: createServerDto.name,
-          serverImage: `server-images/${userId + image}`,
+          serverImage: image,
           userId: userId,
         },
       });

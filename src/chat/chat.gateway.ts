@@ -43,6 +43,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       client.handshake.auth.id,
     );
 
+    console.log(`Client ${client.id} has Joined, Servers : ${serverList}`)
     client.join([...serverList]);
 
     //
@@ -69,16 +70,14 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() socket: Socket,
     @MessageBody() joinChatDto: JoinChatDto,
   ) {
-    const rooms = Array.from(socket.rooms).slice(1); // Get all rooms except the default room which is the socket id
-    rooms.forEach((room) => socket.leave(room));
+    // const rooms = Array.from(socket.rooms).slice(1); // Get all rooms except the default room which is the socket id
+    // rooms.forEach((room) => socket.leave(room));
     const channelId = await this.chatService.joinRoom(joinChatDto);
 
-    if (channelId) {
+    if (channelId && !socket.rooms.has(channelId)) {
       console.log(`socket ${socket.id} Joined ${channelId}`);
       socket.join(channelId);
-    } else {
-      throw new WsException('Invalid Channel ID');
-    }
+    } 
   }
 
   @SubscribeMessage('send-message')
@@ -123,6 +122,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
             .to(sendMessageDto.channelId)
             .emit('recieve-message', res.message);
           socket.emit('recieve-message', res.message);
+          console.log("Server ID",res.message?.channel?.serverId)
           socket.to(res.message?.channel?.serverId).emit('new-notification', {
             success: true,
             message: `New Message from ${res?.message?.user?.username} in ${res.message?.channel?.name} Channel`,

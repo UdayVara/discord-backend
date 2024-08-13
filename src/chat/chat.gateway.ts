@@ -21,7 +21,7 @@ import { Readable } from 'stream';
 
 @WebSocketGateway({
   cors: {
-    origin: process.env.APP_URL,
+    origin: "*",
   },
   transports: ['websocket', 'polling'],
 })
